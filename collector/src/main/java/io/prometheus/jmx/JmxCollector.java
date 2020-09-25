@@ -3,6 +3,7 @@ package io.prometheus.jmx;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Counter;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -71,7 +72,16 @@ public class JmxCollector extends Collector implements Collector.Describable {
 
     public JmxCollector(File in) throws IOException, MalformedObjectNameException {
         configFile = in;
-        config = loadConfig((Map<String, Object>)new Yaml().load(new FileReader(in)));
+        // Be defensive about loading yaml from a user. In some cases YAMLException
+        // will be thrown for bad configs
+        Map<String, Object> yamlConfig = null;
+        try {
+            yamlConfig = (Map<String, Object>)new Yaml().load(new FileReader(in));
+        } catch (YAMLException e) {
+            System.err.println("YAML configuration error: " + e.getMessage());
+            throw new IllegalArgumentException(e);
+        }
+        config = loadConfig(yamlConfig);
         config.lastUpdate = configFile.lastModified();
     }
 
