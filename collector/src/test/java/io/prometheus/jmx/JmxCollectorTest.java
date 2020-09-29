@@ -3,15 +3,19 @@ package io.prometheus.jmx;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
+
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.yaml.snakeyaml.error.YAMLException;
 
 
 public class JmxCollectorTest {
@@ -243,5 +247,19 @@ public class JmxCollectorTest {
       JmxCollector jc = new JmxCollector("---\nstartDelaySeconds: 1").register(registry);
       Thread.sleep(2000);
       assertEquals(1.0, registry.getSampleValue("boolean_Test_True", new String[]{}, new String[]{}), .001);
+    }
+
+    @Test
+    public void testBillionLaughs() throws Exception {
+        File configFile = new File(getClass().getResource("/testyaml.config").getPath());
+        assertTrue(configFile.exists());
+        try {
+            JmxCollector jc = new JmxCollector(configFile);
+            fail("Excected yaml exception due to billion laughs");
+        } catch (IllegalArgumentException e) {
+            Throwable ex = e.getCause();
+            String prefix = YAMLException.class.getName() + ": ";
+            assertEquals(prefix + "Number of aliases for non-scalar nodes exceeds the specified max=50", e.getMessage());
+        }
     }
 }
