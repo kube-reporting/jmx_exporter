@@ -48,9 +48,14 @@ public class JavaAgent {
        file = args[1];
      }
 
-     new BuildInfoCollector().register();
-     new JmxCollector(new File(file)).register();
-     DefaultExports.initialize();
-     server = new HTTPServer(socket, CollectorRegistry.defaultRegistry, true);
+     try {
+       new BuildInfoCollector().register();
+       new JmxCollector(new File(file)).register();
+       DefaultExports.initialize();
+       server = new HTTPServer(socket, CollectorRegistry.defaultRegistry, true);
+     } catch (IllegalArgumentException e) {
+       System.err.println("Usage: -javaagent:/path/to/JavaAgent.jar=[host:]<port>:<yaml configuration file>");
+       System.exit(1);
+     }
    }
 }
